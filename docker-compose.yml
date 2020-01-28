@@ -1,0 +1,91 @@
+version: "3"
+networks:
+  myproject:
+    external: true
+services:
+  # events-project:
+  #  image: orensimple/project:0.0.1
+  #  depends_on:
+  #    - myproject-db
+  #    - myproject-flyway
+  #  ports:
+  #    - "8088:8088"
+  #    - "9110:9110"
+  #  networks:
+  #    - myproject
+
+  # Run the DB
+  myproject-db2:
+    image: postgres:10.11
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=db-user
+      - POSTGRES_PASSWORD=db-password
+    networks:
+      - myproject
+
+  # Apply migrations to the DB
+  myproject-flyway:
+    image: boxfuse/flyway
+    volumes:
+      - ./db/migration:/flyway/sql
+    command: -url=jdbc:postgresql://myproject-db2/br -user=db-user -password=db-password migrate
+    depends_on:
+      - myproject-db2
+    networks:
+      - myproject
+
+  # myproject-rabbitmq:
+  #   image: "rabbitmq:3-management"
+  #   hostname: "rabbit"
+  #   networks:
+  #     - myproject
+  #   ports:
+  #     - "15672:15672"
+  #     - "5672:5672"
+
+  # prom:
+  #  image: prom/prometheus:latest
+  #  volumes:
+  #    - ./monitor/prometheus.yml:/etc/prometheus/prometheus.yml
+  #  command: "--config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus"
+  #  networks:
+  #    - myproject
+  #  ports:
+  #    - 9090:9090
+  #  depends_on:
+  #    - exporter
+  #    - pg-exporter
+
+  # exporter:
+  #  image: prom/node-exporter:latest
+  #  networks:
+  #    - myproject
+  #  ports:
+  #    - "9100:9100"
+
+  # pg-exporter:
+  #  image: wrouesnel/postgres_exporter:latest
+  #  environment:
+  #    - DATA_SOURCE_NAME=postgresql://db-user:db-password@myproject-db:5432/events?sslmode=disable
+  #  volumes:
+  #    - ./postgres_exporter/queries.yaml:/queries.yaml
+  #  command: "--extend.query-path=/queries.yaml"
+  #  networks:
+  #    - myproject
+  #  ports:
+  #    - 9187:9187
+  #  depends_on:
+  #    - exporter
+
+  # grafana:
+  #  image: grafana/grafana
+  #  networks:
+  #    - myproject
+  #  ports:
+  #    - "3000:3000"
+  #  depends_on:
+  #    - prom
