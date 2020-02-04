@@ -13,3 +13,10 @@ type ReportStorage interface {
 	GetReports(ctx context.Context) ([]*models.Report, error)
 	DeleteReport(ctx context.Context, BannerID int64, GroupID int64, SlotID int64) error
 }
+
+type MemReportStorage interface {
+	UpdateReport(ctx context.Context, slotID int64, groupID int64, bannerID int64) error
+	GetReports(ctx context.Context) (map[int64]map[int64]map[int64]*models.Stat, error)
+	AddClickToReport(ctx context.Context, slotID int64, groupID int64, bannerID int64) error
+	AddShowToReport(ctx context.Context, slotID int64, groupID int64, bannerID int64) error
+}

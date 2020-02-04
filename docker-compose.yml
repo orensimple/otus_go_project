@@ -15,7 +15,7 @@ services:
   #    - myproject
 
   # Run the DB
-  myproject-db2:
+  myproject-db3:
     image: postgres:10.11
     volumes:
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -28,24 +28,23 @@ services:
       - myproject
 
   # Apply migrations to the DB
-  myproject-flyway:
-    image: boxfuse/flyway
+  myproject-flyway3:
+    image: boxfuse/flyway:5.1.4
     volumes:
       - ./db/migration:/flyway/sql
-    command: -url=jdbc:postgresql://myproject-db2/br -user=db-user -password=db-password migrate
+    command: -url=jdbc:postgresql://myproject-db3/br -user=db-user -password=db-password migrate
     depends_on:
-      - myproject-db2
+      - myproject-db3
     networks:
       - myproject
 
-  # myproject-rabbitmq:
-  #   image: "rabbitmq:3-management"
-  #   hostname: "rabbit"
-  #   networks:
-  #     - myproject
-  #   ports:
-  #     - "15672:15672"
-  #     - "5672:5672"
+  myproject-rabbitmq:
+    image: "rabbitmq:3-management"
+    networks:
+      - myproject
+    ports:
+      - "15672:15672"
+      - "5672:5672"
 
   # prom:
   #  image: prom/prometheus:latest
@@ -80,12 +79,3 @@ services:
   #    - 9187:9187
   #  depends_on:
   #    - exporter
-
-  # grafana:
-  #  image: grafana/grafana
-  #  networks:
-  #    - myproject
-  #  ports:
-  #    - "3000:3000"
-  #  depends_on:
-  #    - prom

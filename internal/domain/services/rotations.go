@@ -8,7 +8,8 @@ import (
 )
 
 type RotationService struct {
-	RotationStorage interfaces.RotationStorage
+	RotationStorage    interfaces.RotationStorage
+	MemRotationStorage interfaces.MemRotationStorage
 }
 
 func (es *RotationService) SetRotation(ctx context.Context, bannerID, slotID int64, title string) (*models.Rotation, error) {
@@ -19,6 +20,10 @@ func (es *RotationService) SetRotation(ctx context.Context, bannerID, slotID int
 	}
 
 	err := es.RotationStorage.SetRotation(ctx, rotation)
+	if err != nil {
+		return nil, err
+	}
+	err = es.MemRotationStorage.SetRotation(ctx, slotID, bannerID)
 	if err != nil {
 		return nil, err
 	}
@@ -49,6 +54,9 @@ func (es *RotationService) GetRotations(ctx context.Context) ([]*models.Rotation
 
 func (es *RotationService) DeleteRotation(ctx context.Context, bannerID int64, slotID int64) error {
 	err := es.RotationStorage.DeleteRotation(ctx, bannerID, slotID)
-
+	if err != nil {
+		return err
+	}
+	_, err = es.MemRotationStorage.DeleteRotation(ctx, slotID, bannerID)
 	return err
 }

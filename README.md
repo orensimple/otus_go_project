@@ -9,9 +9,14 @@
 
 ### TODO
 
-  set click
-  get banner
-
   unit tests get choice
+
+  rafactoring stats to rabbitmq
+  move initDB from header/banner
+
   integtation tests
   gitlab pipeline
+
+  stats to report DB auto send
+  recovery stats from DB
+  

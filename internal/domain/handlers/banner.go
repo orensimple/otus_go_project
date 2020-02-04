@@ -10,6 +10,8 @@ import (
 	"github.com/orensimple/otus_go_project/internal/domain/services"
 	"github.com/orensimple/otus_go_project/internal/logger"
 	"github.com/orensimple/otus_go_project/internal/maindb"
+	"github.com/orensimple/otus_go_project/internal/memory"
+	"github.com/orensimple/otus_go_project/internal/queue"
 	"github.com/spf13/viper"
 )
 
@@ -26,6 +28,9 @@ type Handler struct {
 	MainSlotService       *services.SlotService
 	MaindbSlotStorage     *maindb.PgSlotStorage
 	MainChoiceService     *services.ChoiceService
+	MemReportStorage      *memory.MemReportStorage
+	MemRotationStorage    *memory.MemRotationStorage
+	ReportQueue           *queue.ReportQueue
 }
 
 func (h *Handler) SetBanner(resp http.ResponseWriter, req *http.Request) {
@@ -128,15 +133,6 @@ func (h *Handler) InitDB() {
 		ReportStorage: h.MaindbReportStorage,
 	}
 
-	h.MaindbRotationStorage, err = maindb.NewPgRotationStorage(dsn)
-	if err != nil {
-		logger.ContextLogger.Infof("Problem connect to db", dsn, err.Error())
-	}
-
-	h.MainRotationService = &services.RotationService{
-		RotationStorage: h.MaindbRotationStorage,
-	}
-
 	h.MaindbSlotStorage, err = maindb.NewPgSlotStorage(dsn)
 	if err != nil {
 		logger.ContextLogger.Infof("Problem connect to db", dsn, err.Error())
@@ -155,7 +151,29 @@ func (h *Handler) InitDB() {
 		GroupStorage: h.MaindbGroupStorage,
 	}
 
-	h.MainChoiceService = &services.ChoiceService{}
+	h.MemReportStorage = memory.NewMemReportStorage()
+	h.MemRotationStorage = memory.NewMemRotationStorage()
+	h.ReportQueue, err = queue.NewReportQueue()
+	if err != nil {
+		logger.ContextLogger.Infof("Problem connect to RabbitMQ", err.Error())
+	}
+
+	h.MainChoiceService = &services.ChoiceService{
+		MemReportStorage:   h.MemReportStorage,
+		MemRotationStorage: h.MemRotationStorage,
+		ReportQueue:        h.ReportQueue,
+	}
+
+	h.MaindbRotationStorage, err = maindb.NewPgRotationStorage(dsn)
+	if err != nil {
+		logger.ContextLogger.Infof("Problem connect to db", dsn, err.Error())
+	}
+
+	h.MainRotationService = &services.RotationService{
+		RotationStorage:    h.MaindbRotationStorage,
+		MemRotationStorage: h.MemRotationStorage,
+	}
+
 }
 
 func validateBanner(req *http.Request) (int64, string, error) {

@@ -4,65 +4,72 @@ import (
 	"context"
 	"sync"
 
-	"github.com/orensimple//otus_go_project/internal/domain/errors"
-	"github.com/orensimple//otus_go_project/internal/domain/models"
+	"github.com/orensimple/otus_go_project/internal/domain/errors"
+	"github.com/orensimple/otus_go_project/internal/domain/models"
 )
 
 type MemReportStorage struct {
-	reports map[int64]*models.Report
+	reports map[int64]map[int64]map[int64]*models.Stat
 	mutex   *sync.Mutex
 }
 
 func NewMemReportStorage() *MemReportStorage {
+
 	return &MemReportStorage{
-		reports: make(map[int64]*models.Report),
+		reports: make(map[int64]map[int64]map[int64]*models.Stat),
 		mutex:   new(sync.Mutex),
 	}
 }
 
-func (mem *MemReportStorage) SaveReport(ctx context.Context, report *models.Report) error {
+func (mem *MemReportStorage) UpdateReport(ctx context.Context, slotID int64, groupID int64, bannerID int64) error {
 	mem.mutex.Lock()
 	defer mem.mutex.Unlock()
-	if _, ok := mem.reports[report.BannerID]; ok {
-		return errors.ErrReportExist
+	if _, ok := mem.reports[slotID][groupID][bannerID]; ok {
 
+		return errors.ErrReportExist
 	}
-	mem.reports[report.BannerID] = report
+	var stat *models.Stat
+	stat.Show = 0
+	stat.Conversion = 0
+	mem.reports[slotID][groupID][bannerID] = stat
+
 	return nil
 }
 
-func (mem *MemReportStorage) UpdateReport(ctx context.Context, report *models.Report) (*models.Report, error) {
-	if _, ok := mem.reports[report.BannerID]; ok {
-		mem.mutex.Lock()
-		mem.reports[report.BannerID] = report
-		mem.mutex.Unlock()
-
-		return report, nil
-	}
-
-	return nil, errors.ErrReportNotFound
-}
-
-func (mem *MemReportStorage) GetReports(ctx context.Context) ([]*models.Report, error) {
-	Reports := make([]*models.Report, 0)
-	mem.mutex.Lock()
-	for _, bm := range mem.reports {
-		Reports = append(Reports, bm)
-	}
-	mem.mutex.Unlock()
-
-	return Reports, nil
-}
-
-func (mem *MemReportStorage) DeleteReport(ctx context.Context, BannerID int64, GroupID int64, SlotID int64) error {
+func (mem *MemReportStorage) AddClickToReport(ctx context.Context, slotID int64, groupID int64, bannerID int64) error {
 	mem.mutex.Lock()
 	defer mem.mutex.Unlock()
+	if _, ok := mem.reports[slotID][groupID][bannerID]; ok {
+		mem.reports[slotID][groupID][bannerID].Conversion++
 
-	_, ex := mem.reports[BannerID]
-	if ex {
-		delete(mem.reports, BannerID)
 		return nil
 	}
 
 	return errors.ErrReportNotFound
+}
+
+func (mem *MemReportStorage) AddShowToReport(ctx context.Context, slotID int64, groupID int64, bannerID int64) error {
+	mem.mutex.Lock()
+	defer mem.mutex.Unlock()
+	if _, ok := mem.reports[slotID][groupID][bannerID]; ok {
+		mem.reports[slotID][groupID][bannerID].Show++
+
+		return nil
+	}
+	if _, ok := mem.reports[slotID]; !ok {
+		mem.reports[slotID] = make(map[int64]map[int64]*models.Stat)
+	}
+	if _, ok := mem.reports[slotID][groupID]; !ok {
+		mem.reports[slotID][groupID] = make(map[int64]*models.Stat)
+	}
+
+	stat := models.Stat{Show: 1, Conversion: 0}
+	mem.reports[slotID][groupID][bannerID] = &stat
+
+	return nil
+}
+
+func (mem *MemReportStorage) GetReports(ctx context.Context) (map[int64]map[int64]map[int64]*models.Stat, error) {
+
+	return mem.reports, nil
 }

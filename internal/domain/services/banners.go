@@ -8,7 +8,8 @@ import (
 )
 
 type BannerService struct {
-	BannerStorage interfaces.BannerStorage
+	BannerStorage      interfaces.BannerStorage
+	MemRotationStorage interfaces.MemRotationStorage
 }
 
 func (es *BannerService) SetBanner(ctx context.Context, ID int64, title string) (*models.Banner, error) {

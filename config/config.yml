@@ -14,3 +14,13 @@ postgres:
   db: "br"
   user: "db-user"
   passwd: "db-password"
+
+amqp:
+  ip: "127.0.0.1"
+  port: 5672
+  user: "guest"
+  passwd: "guest"
+
+report_type:
+  show: 1
+  conversion: 2

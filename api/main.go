@@ -1,6 +1,7 @@
-package cmd
+package main
 
 import (
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -64,6 +65,7 @@ var RootCmd = &cobra.Command{
 		mux.HandleFunc("/report/delete", mw.HTTPLogger(mw.WithTimeout(router.DeleteReport, TimeOut)))
 
 		mux.HandleFunc("/choice/get", mw.HTTPLogger(mw.WithTimeout(router.GetChoice, TimeOut)))
+		mux.HandleFunc("/choice/click", mw.HTTPLogger(mw.WithTimeout(router.ClickChoice, TimeOut)))
 
 		server := &http.Server{
 			Addr:           serverAddr.String(),
@@ -79,6 +81,9 @@ var RootCmd = &cobra.Command{
 	},
 }
 
-func init() {
+func main() {
 	RootCmd.Flags().StringVar(&addr, "config", "./config", "")
+	if err := RootCmd.Execute(); err != nil {
+		log.Fatal(err)
+	}
 }

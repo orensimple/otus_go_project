@@ -8,5 +8,5 @@ import (
 
 // ReportQueue interface
 type ReportQueue interface {
-	PublicReport(ctx context.Context, report *models.Report) error
+	PublicReport(ctx context.Context, report models.ReportQueueFormat) error
 }
